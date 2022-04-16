@@ -23,6 +23,7 @@ public:
     };
 
     bool operator ==(const Formula &other) const;
+    bool operator ()(bool value) const;
     const Formula& operator !() const;
     const Formula& operator &&(const Formula &rhs) const;
     const Formula& operator ||(const Formula &rhs) const;
@@ -111,5 +112,7 @@ inline const Formula& R(const Formula &lhs, const Formula &rhs) {
 std::ostream& operator <<(std::ostream &out, const Formula &formula);
 
 const Formula& make_standard(const Formula& f);
+
+const Formula& move_x_inside(const Formula& f, int x_number = 0);
 
 } // namespace model::ltl

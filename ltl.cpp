@@ -4,6 +4,33 @@ namespace model::ltl {
 
 std::vector<std::unique_ptr<const Formula>> Formula::_formulae;
 
+
+bool Formula::operator ()(bool value) const {
+    // THIS OPERATOR WORKS CORRECTLY ONLY FOR ATOM, NOT, AND, OR, X
+    switch (this->kind()) {
+        case Formula::ATOM:
+            if (this->prop() == "true") return true;
+            if (this->prop() == "false") return false;
+            return value;
+        case Formula::X:
+            return this->lhs()(value);
+        case Formula::NOT:
+            return !this->lhs()(value);
+        case Formula::AND:
+            return this->lhs()(value) && this->rhs()(value);
+        case Formula::OR:
+            return this->lhs()(value) || this->rhs()(value);
+        // ignore these formulas
+        case Formula::IMPL:
+        case Formula::G:
+        case Formula::F:
+        case Formula::U:
+        case Formula::R:
+            return false;
+    }
+}
+
+
 bool Formula::operator ==(const Formula &other) const {
     if (this->kind() != other.kind() || this->prop() != other.prop()) {
         return false;
@@ -90,8 +117,42 @@ const Formula& make_standard(const Formula& f) {
             // p R q = ~(~p U ~q)
             return !(U(!make_standard(f.lhs()), !make_standard(f.rhs())));
     }
-
-
 }
+
+
+const Formula& add_x(const Formula& f, int x_number) {
+    if (x_number == 0) return f;
+    return add_x(X(f), x_number - 1);
+}
+
+
+const Formula& move_x_inside(const Formula& f, int x_number) {
+    // FORMULA SHOULD BE MADE STANDARD BEFOREHAND
+    // X(~p) = ~X(p)
+    // X (p && q) = Xp && Xq
+    // X (p || q) = Xp || Xq
+    // X (p U q) = Xp U Xq
+    switch (f.kind()) {
+        case Formula::ATOM: {
+            return add_x(f, x_number);
+        }
+        case Formula::NOT:
+            return !move_x_inside(f.lhs(), x_number);
+        case Formula::X:
+            return move_x_inside(f.lhs(), x_number + 1);
+        case Formula::AND:
+            return move_x_inside(f.lhs(), x_number) && move_x_inside(f.rhs(), x_number);
+        case Formula::OR:
+            return move_x_inside(f.lhs(), x_number) || move_x_inside(f.rhs(), x_number);
+        case Formula::U:
+            return U(move_x_inside(f.lhs(), x_number), move_x_inside(f.rhs(), x_number));
+        case Formula::IMPL:
+        case Formula::G:
+        case Formula::F:
+        case Formula::R:
+            return f;
+    }
+}
+
 
 } // namespace model::ltl

@@ -18,12 +18,12 @@ void test_make_standard(std::vector<const Formula> &formulas) {
 void test_closure(std::vector<const Formula> &formulas) {
     std::cout << "Test closure:" << std::endl;
     for (auto &f : formulas) {
+        std::cout << f << std::endl;
         const auto& st_f = make_standard(f);
-        std::cout << st_f << std::endl;
-        auto closure = make_closure_set(st_f);
+        auto closure = make_closure_set(move_x_inside(st_f));
         closure = delete_duplicates(closure);
         for (auto &closure_f : closure) {
-            std::cout << "\t" << closure_f;
+            std::cout << "\t\t" << closure_f;
         }
         std::cout << std::endl;
     }
@@ -37,6 +37,7 @@ int main() {
     const Formula &atom_q = P("q");
     const Formula &formula = G(P("p") >> F(P("q")));
     const Formula &formula1 = U(P("p") >> X(P("q")), !P("p") && P("q"));
+    const Formula &formula2 = X(U(P("p") >> X(P("q")), !P("p") && P("q")));
 
     formulas.push_back(atom_p);
     formulas.push_back(atom_q);
@@ -51,6 +52,7 @@ int main() {
     formulas.push_back(R(atom_p, atom_q));
     formulas.push_back(formula);
     formulas.push_back(formula1);
+    formulas.push_back(formula2);
 
     test_make_standard(formulas);
     test_closure(formulas);
