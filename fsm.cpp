@@ -94,6 +94,16 @@ std::vector<const Formula> make_closure_set(const Formula &f) {
     }
 }
 
+std::vector<const Formula> delete_duplicates(std::vector<const Formula> &formulas) {
+    std::vector<const Formula> result;
+    for (auto &f : formulas) {
+        if (std::find(result.begin(), result.end(), f) == result.end()) {
+            result.push_back(f);
+        }
+    }
+    return result;
+}
+
 // TODO
 // formula calculation
 // make atoms set

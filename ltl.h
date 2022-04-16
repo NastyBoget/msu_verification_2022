@@ -22,6 +22,7 @@ public:
         R     // Release: (A1 R A2)
     };
 
+    bool operator ==(const Formula &other) const;
     const Formula& operator !() const;
     const Formula& operator &&(const Formula &rhs) const;
     const Formula& operator ||(const Formula &rhs) const;

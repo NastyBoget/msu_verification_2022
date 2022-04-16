@@ -109,5 +109,6 @@ std::ostream& operator <<(std::ostream &out, const State &state);
 std::ostream& operator <<(std::ostream &out, const Transition &transition);
 std::ostream& operator <<(std::ostream &out, const Automaton &automaton);
 std::vector<const Formula> make_closure_set(const Formula &f);
+std::vector<const Formula> delete_duplicates(std::vector<const Formula> &formulas);
 
 } // namespace model::fsm

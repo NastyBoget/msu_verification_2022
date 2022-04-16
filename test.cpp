@@ -21,6 +21,7 @@ void test_closure(std::vector<const Formula> &formulas) {
         const auto& st_f = make_standard(f);
         std::cout << st_f << std::endl;
         auto closure = make_closure_set(st_f);
+        closure = delete_duplicates(closure);
         for (auto &closure_f : closure) {
             std::cout << "\t" << closure_f;
         }

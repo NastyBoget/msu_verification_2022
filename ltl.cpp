@@ -4,6 +4,27 @@ namespace model::ltl {
 
 std::vector<std::unique_ptr<const Formula>> Formula::_formulae;
 
+bool Formula::operator ==(const Formula &other) const {
+    if (this->kind() != other.kind() || this->prop() != other.prop()) {
+        return false;
+    }
+    switch (this->kind()) {
+        case Formula::ATOM:
+            return true;
+        case Formula::NOT:
+        case Formula::X:
+        case Formula::G:
+        case Formula::F:
+            return this->lhs() == other.lhs();
+        case Formula::AND:
+        case Formula::OR:
+        case Formula::IMPL:
+        case Formula::U:
+        case Formula::R:
+            return (this->lhs() == other.lhs()) && (this->rhs() == other.rhs());
+    }
+}
+
 std::ostream& operator <<(std::ostream &out, const Formula &formula) {
     switch (formula.kind()) {
     case Formula::ATOM:
