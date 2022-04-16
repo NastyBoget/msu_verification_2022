@@ -5,8 +5,12 @@
 #include <set>
 #include <utility>
 #include <vector>
+#include "ltl.h"
+
+using namespace model::ltl;
 
 namespace model::fsm {
+
 
 class State final {
     // state of the Automaton like s1, s2, ...
@@ -22,11 +26,6 @@ public:
 private:
     const std::string _label;
 };
-
-
-std::ostream& operator <<(std::ostream &out, const State &state) {
-    return out << state.label();
-}
 
 
 class Transition final {
@@ -50,23 +49,6 @@ private:
     const State &_target;
     std::set<std::string> _symbol;
 };
-
-
-std::ostream& operator <<(std::ostream &out, const Transition &transition) {
-    out << transition.source();
-    out << " --[";
-
-    bool separator = false;
-    for (const auto & i : transition.symbol()) {
-        out << (separator ? ", " : "") << i;
-        separator = true;
-    }
-
-    out << "]--> ";
-    out << transition.target();
-
-    return out;
-}
 
 
 class Automaton final {
@@ -123,38 +105,9 @@ inline void Automaton::add_trans(
 }
 
 
-std::ostream& operator <<(std::ostream &out, const Automaton &automaton) {
-    bool separator;
- 
-    out << "S0 = {";
-    separator = false;
-    for (const auto &state: automaton._initial_states) {
-        out << (separator ? ", " : "") << state;
-        separator = true;
-    }
-    out << "}" << std::endl;
-
-    for (const auto &entry: automaton._final_states) {
-        out << "F" << entry.first << " = {";
-        separator = false;
-        for (const auto &state: entry.second) {
-            out << (separator ? ", " : "") << state;
-            separator = true;
-        }
-        out << "}" << std::endl;
-    }
-
-    out << "T = {" << std::endl;
-    separator = false;
-    for (const auto &entry: automaton._transitions) {
-        for (const auto &transition: entry.second) {
-            out << (separator ? "\n" : "") << "  " << transition;
-            separator = true;
-        }
-    }
-    out << std::endl << "}";
-
-    return out;
-}
+std::ostream& operator <<(std::ostream &out, const State &state);
+std::ostream& operator <<(std::ostream &out, const Transition &transition);
+std::ostream& operator <<(std::ostream &out, const Automaton &automaton);
+std::vector<const Formula> make_closure_set(const Formula &f);
 
 } // namespace model::fsm

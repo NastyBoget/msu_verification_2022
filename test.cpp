@@ -4,40 +4,56 @@
 using namespace model::ltl;
 using namespace model::fsm;
 
-void test_make_standard() {
-    // atom ! && || >> G F X U R
-    const Formula &atom_p = P("p");
-    const Formula &atom_q = P("q");
-    const Formula &formula_not = !atom_p;
-    const Formula &formula_g = G(atom_p);
-    const Formula &formula_f = F(atom_p);
-    const Formula &formula_x = X(atom_p);
-    const Formula &formula_and = atom_p && atom_q;
-    const Formula &formula_or = atom_p || atom_q;
-    const Formula &formula_impl = atom_p >> atom_q;
-    const Formula &formula_u = U(atom_p, atom_q);
-    const Formula &formula_r = R(atom_p, atom_q);
 
-    std::cout << "Before: " << atom_p << "\tAfter: " << make_standard(atom_p) << std::endl;
-    std::cout << "Before: " << atom_q << "\tAfter: " << make_standard(atom_q) << std::endl;
-    std::cout << "Before: " << formula_not << "\tAfter: " << make_standard(formula_not) << std::endl;
-    std::cout << "Before: " << formula_g << "\tAfter: " << make_standard(formula_g) << std::endl;
-    std::cout << "Before: " << formula_f << "\tAfter: " << make_standard(formula_f) << std::endl;
-    std::cout << "Before: " << formula_x << "\tAfter: " << make_standard(formula_x) << std::endl;
-    std::cout << "Before: " << formula_and << "\tAfter: " << make_standard(formula_and) << std::endl;
-    std::cout << "Before: " << formula_or << "\tAfter: " << make_standard(formula_or) << std::endl;
-    std::cout << "Before: " << formula_impl << "\tAfter: " << make_standard(formula_impl) << std::endl;
-    std::cout << "Before: " << formula_u << "\tAfter: " << make_standard(formula_u) << std::endl;
-    std::cout << "Before: " << formula_r << "\tAfter: " << make_standard(formula_r) << std::endl;
-
+void test_make_standard(std::vector<const Formula> &formulas) {
+    std::cout << "Test make standart:" << std::endl;
+    for (auto &f : formulas) {
+        std::cout << "Before: " << f << "\tAfter: " << make_standard(f) << std::endl;
+    }
+    std::cout << "====================================================================================" << std::endl;
     std::cout << std::endl;
 }
 
 
-int main() {
-    test_make_standard();
+void test_closure(std::vector<const Formula> &formulas) {
+    std::cout << "Test closure:" << std::endl;
+    for (auto &f : formulas) {
+        const auto& st_f = make_standard(f);
+        std::cout << st_f << std::endl;
+        auto closure = make_closure_set(st_f);
+        for (auto &closure_f : closure) {
+            std::cout << "\t" << closure_f;
+        }
+        std::cout << std::endl;
+    }
+    std::cout << "====================================================================================" << std::endl;
+    std::cout << std::endl;
+}
 
+int main() {
+    std::vector<const Formula> formulas;
+    const Formula &atom_p = P("p");
+    const Formula &atom_q = P("q");
     const Formula &formula = G(P("p") >> F(P("q")));
+    const Formula &formula1 = U(P("p") >> X(P("q")), !P("p") && P("q"));
+
+    formulas.push_back(atom_p);
+    formulas.push_back(atom_q);
+    formulas.push_back(!atom_p);
+    formulas.push_back(G(atom_p));
+    formulas.push_back(F(atom_p));
+    formulas.push_back(X(atom_p));
+    formulas.push_back(atom_p && atom_q);
+    formulas.push_back(atom_p || atom_q);
+    formulas.push_back(atom_p >> atom_q);
+    formulas.push_back(U(atom_p, atom_q));
+    formulas.push_back(R(atom_p, atom_q));
+    formulas.push_back(formula);
+    formulas.push_back(formula1);
+
+    test_make_standard(formulas);
+    test_closure(formulas);
+
 
     std::cout << "Formula: " << std::endl;
     std::cout << formula << std::endl << std::endl;
