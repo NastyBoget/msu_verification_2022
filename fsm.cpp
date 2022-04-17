@@ -207,8 +207,10 @@ std::map<std::string, std::map<std::string, const Formula>> make_atoms_set(std::
         for (const auto &state : states) {
             std::cout << state.first << ": ";
             for (const auto &formulas : state.second) {
-                std::cout << formulas.first << ", ";
+                if (formulas.second.kind() != Formula::NOT)
+                    std::cout << formulas.first << ", ";
             }
+            std::cout << std::endl;
         }
         std::cout << std::endl;
     }
@@ -296,19 +298,19 @@ bool check_obligations(const std::vector<const Formula> &u_formulas,
         const std::map<std::string, const Formula> &state_from,
         const std::map<std::string, const Formula> &state_to) {
     // Xf in state_from <-> f in state_to
-    // (f U g in state_from <-> g in state_from) or (f in state_from and f U g in state_to)
+    // (f U g in state_from) <-> (g in state_from or (f in state_from and f U g in state_to))
     for (const auto &x_f : x_formulas) {
         if ((state_from.find(x_f.prop()) == state_from.end()) != (state_to.find(x_f.lhs().prop()) == state_to.end()))
             return false;
     }
     for (const auto &u_f : u_formulas) {
-        if (((state_from.find(u_f.prop()) == state_from.end()) ==
-                (state_from.find(u_f.rhs().prop()) == state_from.end()))
-            || ((state_from.find(u_f.lhs().prop()) != state_from.end()) &&
-                (state_to.find(u_f.prop()) != state_to.end())))
-            return true;
+        if (not ((state_from.find(u_f.prop()) != state_from.end()) ==
+            ((state_from.find(u_f.rhs().prop()) != state_from.end())
+                || ((state_from.find(u_f.lhs().prop()) != state_from.end()) &&
+                    (state_to.find(u_f.prop()) != state_to.end())))))
+            return false;
     }
-    return false;
+    return true;
 }
 
 
@@ -335,18 +337,6 @@ make_transitions(const std::map<std::string, std::map<std::string, const Formula
         }
     }
 
-    if (VERBOSE) {
-        std::cout << std::endl;
-        std::cout << "Transitions:" << std::endl;
-        for (const auto &transition : transitions) {
-            std::cout << std::get<0>(transition) << "--[";
-            for (const auto &s : std::get<1>(transition)) {
-                std::cout << s;
-            }
-            std::cout << "]-->" << std::get<2>(transition) << std::endl;
-        }
-    }
-
     return transitions;
 }
 
@@ -355,6 +345,8 @@ Automaton ltl_to_buchi(const Formula& f) {
     // make formula standard
     const auto& st_f = move_x_inside(make_standard(f));
     // make closure
+    if (VERBOSE)
+        std::cout << "Standard formula: " << st_f << std::endl;
     std::vector<const Formula> closure = make_closure_set(st_f);
     closure = delete_duplicates(closure);
     std::vector<const Formula> negative_closure;
@@ -366,6 +358,12 @@ Automaton ltl_to_buchi(const Formula& f) {
         closure.push_back(closure_f);
     }
     negative_closure.clear();
+    if (VERBOSE) {
+        std::cout << "Closure: " << std::endl;
+        for (const auto &c_f : closure)
+            std::cout << c_f << "\t\t";
+        std::cout << std::endl;
+    }
     // make states
     auto states = make_atoms_set(closure);
     auto initial_states = make_initial_states_set(states, st_f);
