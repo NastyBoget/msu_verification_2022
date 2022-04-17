@@ -217,8 +217,69 @@ std::map<std::string, std::map<std::string, const Formula>> make_atoms_set(std::
 }
 
 
+std::vector<std::string>
+make_initial_states_set(const std::map<std::string, std::map<std::string, const Formula>> &states,
+        const Formula &f) {
+    std::vector<std::string> initial_states;
+    for (const auto &state : states) {
+        if (state.second.find(f.prop()) != state.second.end())
+            initial_states.push_back(state.first);
+    }
+
+    if (VERBOSE) {
+        std::cout << std::endl;
+        std::cout << "Initial states:" << std::endl;
+        for (const auto &state : initial_states) {
+            std::cout << state << ", ";
+        }
+        std::cout << std::endl;
+    }
+    return initial_states;
+}
+
+
+std::map<int, std::vector<std::string>>
+make_final_states_set(const std::map<std::string, std::map<std::string, const Formula>> &states,
+        const Formula &f, const std::vector<const Formula> &closure) {
+    std::map<int, std::vector<std::string>> final_states;
+    std::map<int, const Formula> u_formulas;
+    size_t current_ind = 0;
+
+    // find all functions with U
+    for (const auto &f_closure : closure) {
+        if (f_closure.kind() == Formula::U) {
+            u_formulas.insert({current_ind, f_closure});
+            current_ind++;
+        }
+    }
+
+    for (const auto &u_formula : u_formulas) {
+        std::vector<std::string> final_statest_subset;
+        for (const auto &state : states) {
+            if (state.second.find(u_formula.second.prop()) == state.second.end() ||
+                state.second.find(u_formula.second.rhs().prop()) != state.second.end()) {
+                final_statest_subset.push_back(state.first);
+            }
+        }
+        final_states.insert({u_formula.first, final_statest_subset});
+    }
+
+    if (VERBOSE) {
+        std::cout << std::endl;
+        std::cout << "Final states:" << std::endl;
+        for (const auto &final_state_sub : final_states) {
+            std::cout << "F" + std::to_string(final_state_sub.first) + ": ";
+            for (const auto &f_s : final_state_sub.second) {
+                std::cout << f_s << ", ";
+            }
+            std::cout << std::endl;
+        }
+    }
+
+    return final_states;
+}
+
 // TODO
-// make initial states set
 // make final states set
 // make transitions
 

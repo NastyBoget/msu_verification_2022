@@ -19,13 +19,24 @@ void test_closure(std::vector<const Formula> &formulas) {
     std::cout << "Test closure:" << std::endl;
     for (auto &f : formulas) {
         const auto& st_f = move_x_inside(make_standard(f));
-        std::cout << st_f << std::endl;
-        auto closure = make_closure_set(st_f);
+        std::cout << "Formula: " << st_f << std::endl;
+        std::vector<const Formula> closure = make_closure_set(st_f);
         closure = delete_duplicates(closure);
+        std::vector<const Formula> negative_closure;
+        negative_closure.reserve(closure.size());
+        for (auto &closure_f : closure) {
+            negative_closure.push_back(!closure_f);
+        }
+        for (auto &closure_f : negative_closure) {
+            closure.push_back(closure_f);
+        }
+        negative_closure.clear();
         for (auto &closure_f : closure) {
             std::cout << "\t\t" << closure_f.prop();
         }
-        make_atoms_set(closure);
+        auto states = make_atoms_set(closure);
+        auto initial_states = make_initial_states_set(states, st_f);
+        auto final_states = make_final_states_set(states, st_f, closure);
         std::cout << std::endl;
     }
     std::cout << "====================================================================================" << std::endl;
