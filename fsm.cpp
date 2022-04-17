@@ -2,6 +2,8 @@
 
 namespace model::fsm {
 
+bool VERBOSE = false;
+
 
 std::ostream& operator <<(std::ostream &out, const State &state) {
     return out << state.label();
@@ -95,6 +97,7 @@ std::vector<const Formula> make_closure_set(const Formula &f) {
 }
 
 std::vector<const Formula> delete_duplicates(std::vector<const Formula> &formulas) {
+    // removes equal formulas from the result of make_closure_set function
     std::vector<const Formula> result;
     for (auto &f : formulas) {
         if (std::find(result.begin(), result.end(), f) == result.end()) {
@@ -104,9 +107,117 @@ std::vector<const Formula> delete_duplicates(std::vector<const Formula> &formula
     return result;
 }
 
+
+std::map<std::string, const Formula> get_true_cl_formulas(std::vector<const Formula> &closure,
+        std::map<std::string, bool> &atoms_values) {
+    std::map<std::string, const Formula> true_formulas;
+    for (auto &closure_elem : closure) {
+        if (closure_elem(atoms_values)) {
+            true_formulas.insert({closure_elem.prop(), closure_elem});
+        }
+    }
+
+    if (VERBOSE) {
+        for (auto &elem: true_formulas) {
+            std:: cout << elem.first << "\t\t";
+        }
+        std::cout << std::endl;
+    }
+    return true_formulas;
+}
+
+
+std::map<std::string, std::map<std::string, const Formula>>
+get_states_for_atoms_values(const std::vector<const Formula> &closure, size_t& states_number,
+        const std::map<std::string, const Formula> &true_formulas) {
+
+    std::map<std::string, std::map<std::string, const Formula>> local_states;
+    local_states.insert({"s" + std::to_string(states_number), true_formulas});
+    states_number++;
+    for (auto &closure_elem : closure) {
+        std::__1::map<std::string, std::__1::map<std::string, const Formula>> additional_states;
+        for (auto &local_state : local_states) {
+            if (local_state.second.find(closure_elem.prop()) != local_state.second.end())
+                continue;
+            auto closure_elem_value = closure_elem(local_state.second);
+            if (closure_elem_value == Formula::TRUE) {
+                local_state.second.insert({closure_elem.prop(), closure_elem});
+                continue;
+            }
+            if (closure_elem_value == Formula::UNKNOWN) {
+                auto new_state_name = "s" + std::to_string(states_number);
+                additional_states.insert({new_state_name, local_state.second});
+                additional_states[new_state_name].insert({closure_elem.prop(), closure_elem});
+                states_number++;
+            }
+        }
+        for (const auto &additional_state : additional_states) {
+            local_states.insert({additional_state.first, additional_state.second});
+        }
+    }
+    return local_states;
+}
+
+
+std::map<std::string, std::map<std::string, const Formula>> make_atoms_set(std::vector<const Formula> &closure) {
+    // returns set of pairs {state_name, vector of true formulas}
+    std::map<std::string, std::map<std::string, const Formula>> states;
+    std::map<std::string, bool> atoms_values;
+
+    // init atoms values
+    for (auto &closure_elem : closure) {
+        if (closure_elem.kind() == Formula::ATOM or closure_elem.kind() == Formula::X) {
+            if (closure_elem.kind() == Formula::ATOM and
+                (closure_elem.prop() == "true" or closure_elem.prop() == "false"))
+                continue;
+            atoms_values.insert({closure_elem.prop(), false});
+        }
+    }
+    if (VERBOSE)
+        std::cout << std::endl;
+
+    // find states for different atoms values combinations
+    size_t states_number = 1;
+    size_t rows_number = 1 << atoms_values.size();
+    for (size_t i = 0; i < rows_number; i++) {
+        size_t j = 0;
+        // fill atoms values with all possible combinations
+        for (auto &atoms_value : atoms_values) {
+            atoms_value.second = (bool) ((i >> j) & 1);
+            j++;
+
+            if (VERBOSE)
+                std::cout << atoms_value.first << "=" << atoms_value.second << ",";
+        }
+        if (VERBOSE)
+            std::cout << std::endl;
+
+        std::map<std::string, const Formula> true_formulas = get_true_cl_formulas(closure, atoms_values);
+        auto local_states = get_states_for_atoms_values(closure, states_number, true_formulas);
+
+        for (const auto &local_state : local_states) {
+            states.insert({local_state.first, local_state.second});
+        }
+
+    }
+
+    if (VERBOSE) {
+        std::cout << std::endl;
+        std::cout << "States:" << std::endl;
+        for (const auto &state : states) {
+            std::cout << state.first << ": ";
+            for (const auto &formulas : state.second) {
+                std::cout << formulas.first << ", ";
+            }
+        }
+        std::cout << std::endl;
+    }
+
+    return states;
+}
+
+
 // TODO
-// formula calculation
-// make atoms set
 // make initial states set
 // make final states set
 // make transitions

@@ -5,28 +5,73 @@ namespace model::ltl {
 std::vector<std::unique_ptr<const Formula>> Formula::_formulae;
 
 
-bool Formula::operator ()(bool value) const {
+bool Formula::operator ()(std::map<std::string, bool> &values) const {
     // THIS OPERATOR WORKS CORRECTLY ONLY FOR ATOM, NOT, AND, OR, X
+    // calculates value of the formula if it consists only of classical operators
     switch (this->kind()) {
         case Formula::ATOM:
             if (this->prop() == "true") return true;
             if (this->prop() == "false") return false;
-            return value;
+            return values[this->prop()];
         case Formula::X:
-            return this->lhs()(value);
+            return values[this->prop()];
         case Formula::NOT:
-            return !this->lhs()(value);
+            return !this->lhs()(values);
         case Formula::AND:
-            return this->lhs()(value) && this->rhs()(value);
+            return this->lhs()(values) && this->rhs()(values);
         case Formula::OR:
-            return this->lhs()(value) || this->rhs()(value);
+            return this->lhs()(values) || this->rhs()(values);
+        // ignore these formulas
+        case Formula::U:
+        case Formula::IMPL:
+        case Formula::G:
+        case Formula::F:
+        case Formula::R:
+            return false;
+    }
+}
+
+
+Formula::BoolTernary Formula::operator ()(std::map<std::string, const Formula> &values) const {
+    // THIS OPERATOR WORKS CORRECTLY ONLY FOR ATOM, NOT, AND, OR, X, U
+    // calculates value of the formula according to the presence of subformulas in values
+    switch (this->kind()) {
+        case Formula::ATOM:
+        case Formula::X: {
+            if (values.find(this->prop()) != values.end())
+                return Formula::TRUE;
+            return Formula::FALSE;
+        }
+        case Formula::NOT: {
+            if (this->lhs()(values) == Formula::TRUE)
+                return Formula::FALSE;
+            return Formula::TRUE;
+        }
+        case Formula::AND: {
+            bool bool_value =  (this->lhs()(values) == Formula::TRUE) && (this->rhs()(values) == Formula::TRUE);
+            if (bool_value)
+                return Formula::TRUE;
+            return Formula::FALSE;
+        }
+        case Formula::OR: {
+            bool bool_value =  (this->lhs()(values) == Formula::TRUE) || (this->rhs()(values) == Formula::TRUE);
+            if (bool_value)
+                return Formula::TRUE;
+            return Formula::FALSE;
+        }
+        case Formula::U: {
+            if (values.find(this->rhs().prop()) != values.end())
+                return Formula::TRUE;
+            if (values.find(this->lhs().prop()) != values.end())
+                return Formula::UNKNOWN;
+            return Formula::FALSE;
+        }
         // ignore these formulas
         case Formula::IMPL:
         case Formula::G:
         case Formula::F:
-        case Formula::U:
         case Formula::R:
-            return false;
+            return Formula::FALSE;
     }
 }
 

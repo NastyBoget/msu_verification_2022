@@ -6,7 +6,7 @@ using namespace model::fsm;
 
 
 void test_make_standard(std::vector<const Formula> &formulas) {
-    std::cout << "Test make standart:" << std::endl;
+    std::cout << "Test make standard:" << std::endl;
     for (auto &f : formulas) {
         std::cout << "Before: " << f << "\tAfter: " << make_standard(f) << std::endl;
     }
@@ -18,13 +18,14 @@ void test_make_standard(std::vector<const Formula> &formulas) {
 void test_closure(std::vector<const Formula> &formulas) {
     std::cout << "Test closure:" << std::endl;
     for (auto &f : formulas) {
-        std::cout << f << std::endl;
-        const auto& st_f = make_standard(f);
-        auto closure = make_closure_set(move_x_inside(st_f));
+        const auto& st_f = move_x_inside(make_standard(f));
+        std::cout << st_f << std::endl;
+        auto closure = make_closure_set(st_f);
         closure = delete_duplicates(closure);
         for (auto &closure_f : closure) {
-            std::cout << "\t\t" << closure_f;
+            std::cout << "\t\t" << closure_f.prop();
         }
+        make_atoms_set(closure);
         std::cout << std::endl;
     }
     std::cout << "====================================================================================" << std::endl;
@@ -56,7 +57,6 @@ int main() {
 
     test_make_standard(formulas);
     test_closure(formulas);
-
 
     std::cout << "Formula: " << std::endl;
     std::cout << formula << std::endl << std::endl;

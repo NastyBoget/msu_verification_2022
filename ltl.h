@@ -4,6 +4,8 @@
 #include <memory>
 #include <utility>
 #include <vector>
+#include <map>
+#include <set>
 
 namespace model::ltl {
 
@@ -22,8 +24,15 @@ public:
         R     // Release: (A1 R A2)
     };
 
+    enum BoolTernary {
+        TRUE,
+        FALSE,
+        UNKNOWN,
+    };
+
     bool operator ==(const Formula &other) const;
-    bool operator ()(bool value) const;
+    bool operator ()(std::map<std::string, bool> &values) const;
+    BoolTernary operator ()(std::map<std::string, const Formula> &values) const;
     const Formula& operator !() const;
     const Formula& operator &&(const Formula &rhs) const;
     const Formula& operator ||(const Formula &rhs) const;
@@ -50,11 +59,8 @@ private:
     explicit Formula(const std::string &prop):
         Formula(ATOM, prop, nullptr, nullptr) {}
 
-    Formula(Kind kind, const Formula *arg):
-        Formula(kind, "", arg, nullptr) {}
-
-    Formula(Kind kind, const Formula *lhs, const Formula *rhs):
-        Formula(kind, "", lhs, rhs) {}
+    Formula(Kind kind, const std::string &prop, const Formula *arg):
+        Formula(kind, prop, arg, nullptr) {}
 
     static const Formula& alloc(const Formula *formula) {
         _formulae.push_back(std::unique_ptr<const Formula>(formula));
@@ -70,19 +76,19 @@ private:
 };
 
 inline const Formula& Formula::operator !() const {
-    return alloc(new Formula(NOT, this));
+    return alloc(new Formula(NOT, "!(" + this->prop() + ")", this));
 }
 
 inline const Formula& Formula::operator &&(const Formula &rhs) const {
-    return alloc(new Formula(AND, this, &rhs));
+    return alloc(new Formula(AND, "(" + this->prop() + ")&&(" + rhs.prop() + ")", this, &rhs));
 }
 
 inline const Formula& Formula::operator ||(const Formula &rhs) const {
-    return alloc(new Formula(OR, this, &rhs));
+    return alloc(new Formula(OR, "(" + this->prop() + ")||(" + rhs.prop() + ")", this, &rhs));
 }
 
 inline const Formula& Formula::operator >>(const Formula &rhs) const {
-    return alloc(new Formula(IMPL, this, &rhs));
+    return alloc(new Formula(IMPL, "(" + this->prop() + ")->(" + rhs.prop() + ")", this, &rhs));
 }
 
 inline const Formula& P(const std::string &prop) {
@@ -90,23 +96,23 @@ inline const Formula& P(const std::string &prop) {
 }
 
 inline const Formula& X(const Formula &arg) {
-    return Formula::alloc(new Formula(Formula::X, &arg));
+    return Formula::alloc(new Formula(Formula::X, "X(" + arg.prop() + ")", &arg));
 }
 
 inline const Formula& G(const Formula &arg) {
-    return Formula::alloc(new Formula(Formula::G, &arg));
+    return Formula::alloc(new Formula(Formula::G, "G(" + arg.prop() + ")", &arg));
 }
 
 inline const Formula& F(const Formula &arg) {
-    return Formula::alloc(new Formula(Formula::F, &arg));
+    return Formula::alloc(new Formula(Formula::F, "F(" + arg.prop() + ")", &arg));
 }
 
 inline const Formula& U(const Formula &lhs, const Formula &rhs) {
-    return Formula::alloc(new Formula(Formula::U, &lhs, &rhs));
+    return Formula::alloc(new Formula(Formula::U, "(" + lhs.prop() + ")U(" + rhs.prop() + ")", &lhs, &rhs));
 }
 
 inline const Formula& R(const Formula &lhs, const Formula &rhs) {
-    return Formula::alloc(new Formula(Formula::R, &lhs, &rhs));
+    return Formula::alloc(new Formula(Formula::R, "(" + lhs.prop() + ")R(" + rhs.prop() + ")", &lhs, &rhs));
 }
 
 std::ostream& operator <<(std::ostream &out, const Formula &formula);
