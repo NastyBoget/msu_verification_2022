@@ -108,12 +108,7 @@ inline void Automaton::add_trans(
 std::ostream& operator <<(std::ostream &out, const State &state);
 std::ostream& operator <<(std::ostream &out, const Transition &transition);
 std::ostream& operator <<(std::ostream &out, const Automaton &automaton);
-std::vector<const Formula> make_closure_set(const Formula &f);
-std::vector<const Formula> delete_duplicates(std::vector<const Formula> &formulas);
-std::map<std::string, std::map<std::string, const Formula>> make_atoms_set(std::vector<const Formula> &closure);
-std::vector<std::string> make_initial_states_set(const std::map<std::string,
-        std::map<std::string, const Formula>> &states, const Formula &f);
-std::map<int, std::vector<std::string>> make_final_states_set(const std::map<std::string,
-        std::map<std::string, const Formula>> &states, const Formula &f, const std::vector<const Formula> &closure);
+
+Automaton ltl_to_buchi(const Formula& f);
 
 } // namespace model::fsm

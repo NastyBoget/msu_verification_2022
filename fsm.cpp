@@ -279,9 +279,116 @@ make_final_states_set(const std::map<std::string, std::map<std::string, const Fo
     return final_states;
 }
 
-// TODO
-// make final states set
-// make transitions
 
-
+std::set<std::string> get_symbol(const std::map<std::string, const Formula> &state) {
+    std::set<std::string> symbol;
+    for (const auto &f_state: state) {
+        if (f_state.second.kind() == Formula::ATOM &&
+            f_state.second.prop() != "true" && f_state.second.prop() != "false")
+            symbol.insert(f_state.first);
+    }
+    return symbol;
 }
+
+
+bool check_obligations(const std::vector<const Formula> &u_formulas,
+        const std::vector<const Formula> &x_formulas,
+        const std::map<std::string, const Formula> &state_from,
+        const std::map<std::string, const Formula> &state_to) {
+    // Xf in state_from <-> f in state_to
+    // (f U g in state_from <-> g in state_from) or (f in state_from and f U g in state_to)
+    for (const auto &x_f : x_formulas) {
+        if ((state_from.find(x_f.prop()) == state_from.end()) != (state_to.find(x_f.lhs().prop()) == state_to.end()))
+            return false;
+    }
+    for (const auto &u_f : u_formulas) {
+        if (((state_from.find(u_f.prop()) == state_from.end()) ==
+                (state_from.find(u_f.rhs().prop()) == state_from.end()))
+            || ((state_from.find(u_f.lhs().prop()) != state_from.end()) &&
+                (state_to.find(u_f.prop()) != state_to.end())))
+            return true;
+    }
+    return false;
+}
+
+
+std::vector<std::tuple<std::string, std::set<std::string>, std::string>>
+make_transitions(const std::map<std::string, std::map<std::string, const Formula>> &states,
+        const std::vector<const Formula> &closure) {
+    std::vector<std::tuple<std::string, std::set<std::string>, std::string>> transitions;
+    std::vector<const Formula> u_formulas, x_formulas;
+
+    // find all functions with U and X
+    for (const auto &f_closure : closure) {
+        if (f_closure.kind() == Formula::U)
+            u_formulas.push_back(f_closure);
+        if (f_closure.kind() == Formula::X)
+            x_formulas.push_back(f_closure);
+    }
+
+    for (const auto &state_from : states) {
+        auto symbol = get_symbol(state_from.second);
+        for (const auto &state_to : states) {
+            if (check_obligations(u_formulas, x_formulas, state_from.second, state_to.second)) {
+                transitions.emplace_back(state_from.first, symbol, state_to.first);
+            }
+        }
+    }
+
+    if (VERBOSE) {
+        std::cout << std::endl;
+        std::cout << "Transitions:" << std::endl;
+        for (const auto &transition : transitions) {
+            std::cout << std::get<0>(transition) << "--[";
+            for (const auto &s : std::get<1>(transition)) {
+                std::cout << s;
+            }
+            std::cout << "]-->" << std::get<2>(transition) << std::endl;
+        }
+    }
+
+    return transitions;
+}
+
+
+Automaton ltl_to_buchi(const Formula& f) {
+    // make formula standard
+    const auto& st_f = move_x_inside(make_standard(f));
+    // make closure
+    std::vector<const Formula> closure = make_closure_set(st_f);
+    closure = delete_duplicates(closure);
+    std::vector<const Formula> negative_closure;
+    negative_closure.reserve(closure.size());
+    for (auto &closure_f : closure) {
+        negative_closure.push_back(!closure_f);
+    }
+    for (auto &closure_f : negative_closure) {
+        closure.push_back(closure_f);
+    }
+    negative_closure.clear();
+    // make states
+    auto states = make_atoms_set(closure);
+    auto initial_states = make_initial_states_set(states, st_f);
+    auto final_states = make_final_states_set(states, st_f, closure);
+    auto transitions = make_transitions(states, closure);
+
+    Automaton automaton;
+    for (const auto &s: states) {
+        automaton.add_state(s.first);
+    }
+    for (const auto &s: initial_states) {
+        automaton.set_initial(s);
+    }
+    for (const auto &f_subset: final_states) {
+        for (const auto &s : f_subset.second) {
+            automaton.set_final(s, f_subset.first);
+        }
+    }
+    for (const auto &t : transitions) {
+        automaton.add_trans(std::get<0>(t), std::get<1>(t), std::get<2>(t));
+    }
+    return automaton;
+}
+
+
+} // namespace model::fsm
