@@ -2,7 +2,7 @@
 
 namespace model::fsm {
 
-bool VERBOSE = false;
+bool VERBOSE = true;
 
 
 std::ostream& operator <<(std::ostream &out, const State &state) {
@@ -135,7 +135,7 @@ get_states_for_atoms_values(const std::vector<const Formula> &closure, size_t& s
     local_states.insert({"s" + std::to_string(states_number), true_formulas});
     states_number++;
     for (auto &closure_elem : closure) {
-        std::__1::map<std::string, std::__1::map<std::string, const Formula>> additional_states;
+        std::map<std::string, std::map<std::string, const Formula>> additional_states;
         for (auto &local_state : local_states) {
             if (local_state.second.find(closure_elem.prop()) != local_state.second.end())
                 continue;
@@ -349,26 +349,24 @@ Automaton ltl_to_buchi(const Formula& f) {
         std::cout << "Standard formula: " << st_f << std::endl;
     std::vector<const Formula> closure = make_closure_set(st_f);
     closure = delete_duplicates(closure);
-    std::vector<const Formula> negative_closure;
-    negative_closure.reserve(closure.size());
+    std::vector<const Formula> full_closure;
+    full_closure.reserve(2 * closure.size());
     for (auto &closure_f : closure) {
-        negative_closure.push_back(!closure_f);
+        full_closure.push_back(closure_f);
+        full_closure.push_back(!closure_f);
     }
-    for (auto &closure_f : negative_closure) {
-        closure.push_back(closure_f);
-    }
-    negative_closure.clear();
+    closure.clear();
     if (VERBOSE) {
         std::cout << "Closure: " << std::endl;
-        for (const auto &c_f : closure)
+        for (const auto &c_f : full_closure)
             std::cout << c_f << "\t\t";
         std::cout << std::endl;
     }
     // make states
-    auto states = make_atoms_set(closure);
+    auto states = make_atoms_set(full_closure);
     auto initial_states = make_initial_states_set(states, st_f);
-    auto final_states = make_final_states_set(states, st_f, closure);
-    auto transitions = make_transitions(states, closure);
+    auto final_states = make_final_states_set(states, st_f, full_closure);
+    auto transitions = make_transitions(states, full_closure);
 
     Automaton automaton;
     for (const auto &s: states) {
