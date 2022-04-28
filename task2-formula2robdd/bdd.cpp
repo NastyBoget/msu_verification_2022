@@ -26,7 +26,6 @@ int find_least_variable(const Formula &formula) {
 
 
 const Node& Bdd::create(const Formula &formula) {
-    // TODO Reduce
     if (formula.kind() == Formula::FALSE)
         return zero;
     if (formula.kind() == Formula::TRUE)

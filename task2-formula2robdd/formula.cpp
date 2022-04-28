@@ -48,30 +48,18 @@ const Formula& Formula::operator ()(int var_num, bool value) const {
             return value ? T : F;
         }
         case Formula::NOT: {
-            _formulae.push_back(std::unique_ptr<const Formula>(
-                    &!this->arg()(var_num, value)));
-            return *_formulae.back();
+            return !this->arg()(var_num, value);
         }
         case Formula::AND:
-            _formulae.push_back(std::unique_ptr<const Formula>(
-                    &(this->lhs()(var_num, value) && this->rhs()(var_num, value))));
-            return *_formulae.back();
+            return this->lhs()(var_num, value) && this->rhs()(var_num, value);
         case Formula::OR:
-            _formulae.push_back(std::unique_ptr<const Formula>(
-                    &(this->lhs()(var_num, value) || this->rhs()(var_num, value))));
-            return *_formulae.back();
+            return this->lhs()(var_num, value) || this->rhs()(var_num, value);
         case Formula::XOR:
-            _formulae.push_back(std::unique_ptr<const Formula>(
-                    &(this->lhs()(var_num, value) != this->rhs()(var_num, value))));
-            return *_formulae.back();
+            return this->lhs()(var_num, value) != this->rhs()(var_num, value);
         case Formula::IMPL:
-            _formulae.push_back(std::unique_ptr<const Formula>(
-                    &(this->lhs()(var_num, value) >> this->rhs()(var_num, value))));
-            return *_formulae.back();
+            return this->lhs()(var_num, value) >> this->rhs()(var_num, value);
         case Formula::EQ:
-            _formulae.push_back(std::unique_ptr<const Formula>(
-                    &(this->lhs()(var_num, value) == this->rhs()(var_num, value))));
-            return *_formulae.back();
+            return this->lhs()(var_num, value) == this->rhs()(var_num, value);
     }
 }
 
