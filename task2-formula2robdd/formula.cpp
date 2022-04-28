@@ -1,17 +1,3 @@
-/*
- * Copyright 2021 ISP RAS (http://www.ispras.ru)
- *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
- * in compliance with the License. You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software distributed under the License
- * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
- * or implied. See the License for the specific language governing permissions and limitations under
- * the License.
- */
-
 #include "formula.h"
 
 namespace model::logic {
@@ -25,28 +11,93 @@ const Formula T = Formula::T;
 std::vector<std::unique_ptr<const Formula>> Formula::_formulae;
 
 std::ostream& operator <<(std::ostream &out, const Formula &formula) {
-  switch (formula.kind()) {
-  case Formula::FALSE:
-    return out << "false";
-  case Formula::TRUE:
-    return out << "true";
-  case Formula::VAR:
-    return out << "x" << formula.var();
-  case Formula::NOT:
-    return out << "!(" << formula.arg() << ")";
-  case Formula::AND:
-    return out << "(" << formula.lhs() << ") && (" << formula.rhs() << ")";
-  case Formula::OR:
-    return out << "(" << formula.lhs() << ") || (" << formula.rhs() << ")";
-  case Formula::XOR:
-    return out << "(" << formula.lhs() << ") != (" << formula.rhs() << ")";
-  case Formula::IMPL:
-    return out << "(" << formula.lhs() << ") -> (" << formula.rhs() << ")";
-  case Formula::EQ:
-    return out << "(" << formula.lhs() << ") == (" << formula.rhs() << ")";
-  }
+    switch (formula.kind()) {
+    case Formula::FALSE:
+        return out << "false";
+    case Formula::TRUE:
+        return out << "true";
+    case Formula::VAR:
+        return out << "x" << formula.var();
+    case Formula::NOT:
+        return out << "!(" << formula.arg() << ")";
+    case Formula::AND:
+        return out << "(" << formula.lhs() << ") && (" << formula.rhs() << ")";
+    case Formula::OR:
+        return out << "(" << formula.lhs() << ") || (" << formula.rhs() << ")";
+    case Formula::XOR:
+        return out << "(" << formula.lhs() << ") != (" << formula.rhs() << ")";
+    case Formula::IMPL:
+        return out << "(" << formula.lhs() << ") -> (" << formula.rhs() << ")";
+    case Formula::EQ:
+        return out << "(" << formula.lhs() << ") == (" << formula.rhs() << ")";
+    }
 
-  return out;
+    return out;
 }
+
+
+const Formula& Formula::operator ()(int var_num, bool value) const {
+    switch (this->kind()) {
+        case Formula::FALSE:
+            return F;
+        case Formula::TRUE:
+            return T;
+        case Formula::VAR: {
+            if (var_num != this->var())
+                return *this;
+            return value ? T : F;
+        }
+        case Formula::NOT: {
+            _formulae.push_back(std::unique_ptr<const Formula>(
+                    &!this->arg()(var_num, value)));
+            return *_formulae.back();
+        }
+        case Formula::AND:
+            _formulae.push_back(std::unique_ptr<const Formula>(
+                    &(this->lhs()(var_num, value) && this->rhs()(var_num, value))));
+            return *_formulae.back();
+        case Formula::OR:
+            _formulae.push_back(std::unique_ptr<const Formula>(
+                    &(this->lhs()(var_num, value) || this->rhs()(var_num, value))));
+            return *_formulae.back();
+        case Formula::XOR:
+            _formulae.push_back(std::unique_ptr<const Formula>(
+                    &(this->lhs()(var_num, value) != this->rhs()(var_num, value))));
+            return *_formulae.back();
+        case Formula::IMPL:
+            _formulae.push_back(std::unique_ptr<const Formula>(
+                    &(this->lhs()(var_num, value) >> this->rhs()(var_num, value))));
+            return *_formulae.back();
+        case Formula::EQ:
+            _formulae.push_back(std::unique_ptr<const Formula>(
+                    &(this->lhs()(var_num, value) == this->rhs()(var_num, value))));
+            return *_formulae.back();
+    }
+}
+
+
+bool Formula::operator ()() const {
+    switch (this->kind()) {
+        case Formula::FALSE:
+            return false;
+        case Formula::TRUE:
+            return true;
+        case Formula::VAR:
+            throw std::invalid_argument("Formula has variables");
+        case Formula::NOT:
+            return not(this->arg()());
+        case Formula::AND:
+            return this->lhs()() and this->rhs()();
+        case Formula::OR:
+            return this->lhs()() or this->rhs()();
+        case Formula::XOR:
+            return this->lhs()() != this->rhs()();
+        case Formula::IMPL:
+            return not(this->lhs()()) or this->rhs()();
+        case Formula::EQ:
+            return this->lhs()() == this->rhs()();
+    }
+}
+
 
 } // namespace model::logic
