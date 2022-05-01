@@ -23,8 +23,6 @@ public:
     static const Formula F;
     static const Formula T;
 
-    friend std::ostream& operator <<(std::ostream &out, const Formula &formula);
-
     const Formula& operator ()(int var_num, bool value) const;
     bool operator ()() const;
     const Formula& operator !() const;
