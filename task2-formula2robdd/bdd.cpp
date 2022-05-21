@@ -22,6 +22,7 @@ int find_least_variable(const Formula &formula) {
         case Formula::EQ:
             return std::min(find_least_variable(formula.lhs()), find_least_variable(formula.rhs()));
     }
+    return INT_MAX;
 }
 
 

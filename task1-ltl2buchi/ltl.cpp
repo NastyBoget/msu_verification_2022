@@ -29,10 +29,11 @@ bool Formula::operator ()(std::map<std::string, bool> &values) const {
         case Formula::R:
             return false;
     }
+    return false;
 }
 
 
-Formula::BoolTernary Formula::operator ()(std::map<std::string, const Formula> &values) const {
+Formula::BoolTernary Formula::operator ()(std::map<std::string, Formula> &values) const {
     // THIS OPERATOR WORKS CORRECTLY ONLY FOR ATOM, NOT, AND, OR, X, U
     // calculates value of the formula according to the presence of subformulas in values
     switch (this->kind()) {
@@ -73,6 +74,7 @@ Formula::BoolTernary Formula::operator ()(std::map<std::string, const Formula> &
         case Formula::R:
             return Formula::FALSE;
     }
+    return Formula::FALSE;
 }
 
 
@@ -95,6 +97,7 @@ bool Formula::operator ==(const Formula &other) const {
         case Formula::R:
             return (this->lhs() == other.lhs()) && (this->rhs() == other.rhs());
     }
+    return false;
 }
 
 std::ostream& operator <<(std::ostream &out, const Formula &formula) {
@@ -162,6 +165,7 @@ const Formula& make_standard(const Formula& f) {
             // p R q = ~(~p U ~q)
             return !(U(!make_standard(f.lhs()), !make_standard(f.rhs())));
     }
+    return f;
 }
 
 
@@ -197,6 +201,7 @@ const Formula& move_x_inside(const Formula& f, int x_number) {
         case Formula::R:
             return f;
     }
+    return f;
 }
 
 

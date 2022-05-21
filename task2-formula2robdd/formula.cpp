@@ -61,6 +61,7 @@ const Formula& Formula::operator ()(int var_num, bool value) const {
         case Formula::EQ:
             return this->lhs()(var_num, value) == this->rhs()(var_num, value);
     }
+    return F;
 }
 
 
@@ -85,6 +86,7 @@ bool Formula::operator ()() const {
         case Formula::EQ:
             return this->lhs()() == this->rhs()();
     }
+    return false;
 }
 
 

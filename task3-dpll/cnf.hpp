@@ -3,6 +3,7 @@
 
 #include <set>
 #include <vector>
+#include <stack>
 
 
 class CNF {

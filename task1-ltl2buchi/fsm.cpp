@@ -2,7 +2,7 @@
 
 namespace model::fsm {
 
-bool VERBOSE = true;
+bool VERBOSE = false;
 
 
 std::ostream& operator <<(std::ostream &out, const State &state) {
@@ -61,11 +61,11 @@ std::ostream& operator <<(std::ostream &out, const Automaton &automaton) {
     return out;
 }
 
-std::vector<const Formula> make_closure_set(const Formula &f) {
+std::vector<Formula> make_closure_set(const Formula &f) {
     // FORMULA SHOULD BE MADE STANDARD BEFOREHAND
     // make closure set (without negative formulas)
     // example: closure( (p -> Xq) U (~p && q) ) = { (p -> Xq) U (~p && q), ~p || Xq, ~p && q, Xq, p, q }
-    std::vector<const Formula> closure, second_closure;
+    std::vector<Formula> closure, second_closure;
     switch (f.kind()) {
         case Formula::ATOM:
             closure.push_back(f);
@@ -94,23 +94,30 @@ std::vector<const Formula> make_closure_set(const Formula &f) {
         case Formula::R:
             return closure;
     }
+    return closure;
 }
 
-std::vector<const Formula> delete_duplicates(std::vector<const Formula> &formulas) {
+std::vector<Formula> delete_duplicates(std::vector<Formula> &formulas) {
     // removes equal formulas from the result of make_closure_set function
-    std::vector<const Formula> result;
-    for (auto &f : formulas) {
-        if (std::find(result.begin(), result.end(), f) == result.end()) {
+    std::vector<Formula> result;
+    for (const auto &f : formulas) {
+        bool found = false;
+        for (const auto &r_f : result)
+            if (r_f == f) {
+              found = true;
+              break;
+            }
+        if (not(found))
             result.push_back(f);
-        }
+
     }
     return result;
 }
 
 
-std::map<std::string, const Formula> get_true_cl_formulas(std::vector<const Formula> &closure,
+std::map<std::string, Formula> get_true_cl_formulas(std::vector<Formula> &closure,
         std::map<std::string, bool> &atoms_values) {
-    std::map<std::string, const Formula> true_formulas;
+    std::map<std::string, Formula> true_formulas;
     for (auto &closure_elem : closure) {
         if (closure_elem(atoms_values)) {
             true_formulas.insert({closure_elem.prop(), closure_elem});
@@ -127,15 +134,15 @@ std::map<std::string, const Formula> get_true_cl_formulas(std::vector<const Form
 }
 
 
-std::map<std::string, std::map<std::string, const Formula>>
-get_states_for_atoms_values(const std::vector<const Formula> &closure, size_t& states_number,
-        const std::map<std::string, const Formula> &true_formulas) {
+std::map<std::string, std::map<std::string, Formula>>
+get_states_for_atoms_values(const std::vector<Formula> &closure, size_t& states_number,
+        const std::map<std::string, Formula> &true_formulas) {
 
-    std::map<std::string, std::map<std::string, const Formula>> local_states;
+    std::map<std::string, std::map<std::string, Formula>> local_states;
     local_states.insert({"s" + std::to_string(states_number), true_formulas});
     states_number++;
     for (auto &closure_elem : closure) {
-        std::map<std::string, std::map<std::string, const Formula>> additional_states;
+        std::map<std::string, std::map<std::string, Formula>> additional_states;
         for (auto &local_state : local_states) {
             if (local_state.second.find(closure_elem.prop()) != local_state.second.end())
                 continue;
@@ -159,9 +166,9 @@ get_states_for_atoms_values(const std::vector<const Formula> &closure, size_t& s
 }
 
 
-std::map<std::string, std::map<std::string, const Formula>> make_atoms_set(std::vector<const Formula> &closure) {
+std::map<std::string, std::map<std::string, Formula>> make_atoms_set(std::vector<Formula> &closure) {
     // returns set of pairs {state_name, vector of true formulas}
-    std::map<std::string, std::map<std::string, const Formula>> states;
+    std::map<std::string, std::map<std::string, Formula>> states;
     std::map<std::string, bool> atoms_values;
 
     // init atoms values
@@ -192,7 +199,7 @@ std::map<std::string, std::map<std::string, const Formula>> make_atoms_set(std::
         if (VERBOSE)
             std::cout << std::endl;
 
-        std::map<std::string, const Formula> true_formulas = get_true_cl_formulas(closure, atoms_values);
+        std::map<std::string, Formula> true_formulas = get_true_cl_formulas(closure, atoms_values);
         auto local_states = get_states_for_atoms_values(closure, states_number, true_formulas);
 
         for (const auto &local_state : local_states) {
@@ -220,7 +227,7 @@ std::map<std::string, std::map<std::string, const Formula>> make_atoms_set(std::
 
 
 std::vector<std::string>
-make_initial_states_set(const std::map<std::string, std::map<std::string, const Formula>> &states,
+make_initial_states_set(const std::map<std::string, std::map<std::string, Formula>> &states,
         const Formula &f) {
     std::vector<std::string> initial_states;
     for (const auto &state : states) {
@@ -241,10 +248,10 @@ make_initial_states_set(const std::map<std::string, std::map<std::string, const 
 
 
 std::map<int, std::vector<std::string>>
-make_final_states_set(const std::map<std::string, std::map<std::string, const Formula>> &states,
-        const Formula &f, const std::vector<const Formula> &closure) {
+make_final_states_set(const std::map<std::string, std::map<std::string, Formula>> &states,
+        const Formula &f, const std::vector<Formula> &closure) {
     std::map<int, std::vector<std::string>> final_states;
-    std::map<int, const Formula> u_formulas;
+    std::map<int, Formula> u_formulas;
     size_t current_ind = 0;
 
     // find all functions with U
@@ -282,7 +289,7 @@ make_final_states_set(const std::map<std::string, std::map<std::string, const Fo
 }
 
 
-std::set<std::string> get_symbol(const std::map<std::string, const Formula> &state) {
+std::set<std::string> get_symbol(const std::map<std::string, Formula> &state) {
     std::set<std::string> symbol;
     for (const auto &f_state: state) {
         if (f_state.second.kind() == Formula::ATOM &&
@@ -293,10 +300,10 @@ std::set<std::string> get_symbol(const std::map<std::string, const Formula> &sta
 }
 
 
-bool check_obligations(const std::vector<const Formula> &u_formulas,
-        const std::vector<const Formula> &x_formulas,
-        const std::map<std::string, const Formula> &state_from,
-        const std::map<std::string, const Formula> &state_to) {
+bool check_obligations(const std::vector<Formula> &u_formulas,
+        const std::vector<Formula> &x_formulas,
+        const std::map<std::string, Formula> &state_from,
+        const std::map<std::string, Formula> &state_to) {
     // Xf in state_from <-> f in state_to
     // (f U g in state_from) <-> (g in state_from or (f in state_from and f U g in state_to))
     for (const auto &x_f : x_formulas) {
@@ -315,10 +322,10 @@ bool check_obligations(const std::vector<const Formula> &u_formulas,
 
 
 std::vector<std::tuple<std::string, std::set<std::string>, std::string>>
-make_transitions(const std::map<std::string, std::map<std::string, const Formula>> &states,
-        const std::vector<const Formula> &closure) {
+make_transitions(const std::map<std::string, std::map<std::string, Formula>> &states,
+        const std::vector<Formula> &closure) {
     std::vector<std::tuple<std::string, std::set<std::string>, std::string>> transitions;
-    std::vector<const Formula> u_formulas, x_formulas;
+    std::vector<Formula> u_formulas, x_formulas;
 
     // find all functions with U and X
     for (const auto &f_closure : closure) {
@@ -347,9 +354,9 @@ Automaton ltl_to_buchi(const Formula& f) {
     // make closure
     if (VERBOSE)
         std::cout << "Standard formula: " << st_f << std::endl;
-    std::vector<const Formula> closure = make_closure_set(st_f);
+    std::vector<Formula> closure = make_closure_set(st_f);
     closure = delete_duplicates(closure);
-    std::vector<const Formula> full_closure;
+    std::vector<Formula> full_closure;
     full_closure.reserve(2 * closure.size());
     for (auto &closure_f : closure) {
         full_closure.push_back(closure_f);

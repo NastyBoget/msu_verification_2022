@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <map>
+#include <climits>
 
 #include "formula.h"
 
