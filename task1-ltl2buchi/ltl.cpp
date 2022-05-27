@@ -58,30 +58,30 @@ Formula::BoolTernary Formula::operator ()(std::map<std::string, Formula> &values
             return FALSE;
         }
         case NOT: {
-            if (this->lhs().kind() == U)
-                return FALSE;
-            if (this->lhs()(values) == TRUE)
-                return FALSE;
-            return TRUE;
+            auto value = this->lhs()(values);
+            if (value == FALSE)
+                return TRUE;
+            return value == UNKNOWN ? value : FALSE;
         }
         case AND: {
-            bool bool_value =  (this->lhs()(values) == TRUE) && (this->rhs()(values) == TRUE);
-            if (bool_value)
+            auto left_value = this->lhs()(values);
+            auto right_value = this->rhs()(values);
+            if (left_value == UNKNOWN or right_value == UNKNOWN)
+                return UNKNOWN;
+            if (left_value == TRUE and right_value == TRUE)
                 return TRUE;
             return FALSE;
         }
         case OR: {
-            bool bool_value =  (this->lhs()(values) == TRUE) || (this->rhs()(values) == TRUE);
+            bool bool_value =  (this->lhs()(values) == TRUE) or (this->rhs()(values) == TRUE);
             if (bool_value)
                 return TRUE;
             return FALSE;
         }
         case U: {
-            if (values.find(this->rhs().prop()) != values.end())
+            if (values.find(this->prop()) != values.end())
                 return TRUE;
-            if (values.find(this->lhs().prop()) != values.end())
-                return UNKNOWN;
-            return FALSE;
+            return UNKNOWN;
         }
         // ignore these formulas
         case IMPL:

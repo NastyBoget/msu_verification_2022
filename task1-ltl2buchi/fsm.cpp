@@ -146,17 +146,25 @@ get_states_for_atoms_values(const std::vector<Formula> &closure, size_t& states_
         for (auto &local_state : local_states) {
             if (local_state.second.find(closure_elem.prop()) != local_state.second.end())
                 continue;
-            auto closure_elem_value = closure_elem(local_state.second);
-            if (closure_elem_value == Formula::TRUE) {
-                local_state.second.insert({closure_elem.prop(), closure_elem});
+            if (closure_elem.kind() == Formula::U) {
+                // psi in s
+                if (local_state.second.find(closure_elem.rhs().prop()) != local_state.second.end()) {
+                    local_state.second.insert({closure_elem.prop(), closure_elem});
+                } else if (local_state.second.find(closure_elem.lhs().prop()) != local_state.second.end()) {
+                    // hi is s
+                    auto new_state_name = "s" + std::to_string(states_number);
+                    additional_states.insert({new_state_name, local_state.second});
+                    additional_states[new_state_name].insert({closure_elem.prop(), closure_elem});
+                    states_number++;
+                    auto neg_until = !closure_elem;
+                    local_state.second.insert({neg_until.prop(), neg_until});
+                }
                 continue;
             }
-            if (closure_elem_value == Formula::UNKNOWN) {
-                auto new_state_name = "s" + std::to_string(states_number);
-                additional_states.insert({new_state_name, local_state.second});
-                additional_states[new_state_name].insert({closure_elem.prop(), closure_elem});
-                states_number++;
-            }
+
+            auto closure_elem_value = closure_elem(local_state.second);
+            if (closure_elem_value == Formula::TRUE)
+                local_state.second.insert({closure_elem.prop(), closure_elem});
         }
         for (const auto &additional_state : additional_states) {
             local_states.insert({additional_state.first, additional_state.second});
@@ -214,8 +222,7 @@ std::map<std::string, std::map<std::string, Formula>> make_atoms_set(std::vector
         for (const auto &state : states) {
             std::cout << state.first << ": ";
             for (const auto &formulas : state.second) {
-                if (formulas.second.kind() != Formula::NOT)
-                    std::cout << formulas.first << ", ";
+                std::cout << formulas.first << ", ";
             }
             std::cout << std::endl;
         }

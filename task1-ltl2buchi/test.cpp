@@ -18,10 +18,10 @@ void test(std::vector<Formula> &formulas) {
 int main() {
     std::vector<Formula> formulas;
 
-    formulas.push_back(F(P("p") >> X(!P("q"))));
-    formulas.push_back(U(P("p") >> X(P("q")), !P("p") && P("q")));
-    formulas.push_back(U(P("x"), U(P("y"), P("z"))));
-    formulas.push_back(U(F(P("p")), G(P("q"))));
+    formulas.push_back(F(P("p") >> X(!P("q")))); // 10
+    formulas.push_back(U(P("p") >> X(P("q")), !P("p") && P("q"))); // 12
+    formulas.push_back(U(P("x"), U(P("y"), P("z")))); // 12
+    formulas.push_back(U(F(P("p")), G(P("q")))); // 13
     test(formulas);
 
     return 0;
