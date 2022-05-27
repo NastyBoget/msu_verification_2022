@@ -119,7 +119,7 @@ std::map<std::string, Formula> get_true_cl_formulas(std::vector<Formula> &closur
         std::map<std::string, bool> &atoms_values) {
     std::map<std::string, Formula> true_formulas;
     for (auto &closure_elem : closure) {
-        if (closure_elem(atoms_values)) {
+        if (closure_elem(atoms_values) == Formula::TRUE) {
             true_formulas.insert({closure_elem.prop(), closure_elem});
         }
     }
@@ -189,15 +189,15 @@ std::map<std::string, std::map<std::string, Formula>> make_atoms_set(std::vector
     for (size_t i = 0; i < rows_number; i++) {
         size_t j = 0;
         // fill atoms values with all possible combinations
-        for (auto &atoms_value : atoms_values) {
-            atoms_value.second = (bool) ((i >> j) & 1);
+        for (auto rit = atoms_values.rbegin(); rit != atoms_values.rend(); rit++) {
+            rit->second = (bool) ((i >> j) & 1);
             j++;
-
-            if (VERBOSE)
-                std::cout << atoms_value.first << "=" << atoms_value.second << ",";
         }
-        if (VERBOSE)
+        if (VERBOSE) {
+            for (auto &av: atoms_values)
+                std::cout << av.first << "=" << av.second << ",";
             std::cout << std::endl;
+        }
 
         std::map<std::string, Formula> true_formulas = get_true_cl_formulas(closure, atoms_values);
         auto local_states = get_states_for_atoms_values(closure, states_number, true_formulas);

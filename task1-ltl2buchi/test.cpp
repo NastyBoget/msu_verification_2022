@@ -5,7 +5,7 @@ using namespace model::ltl;
 using namespace model::fsm;
 
 
-void test_closure(std::vector<Formula> &formulas) {
+void test(std::vector<Formula> &formulas) {
     for (auto &f : formulas) {
         std::cout << "Formula: " << f << std::endl;
         Automaton automaton = ltl_to_buchi(f);
@@ -21,7 +21,8 @@ int main() {
     formulas.push_back(F(P("p") >> X(!P("q"))));
     formulas.push_back(U(P("p") >> X(P("q")), !P("p") && P("q")));
     formulas.push_back(U(P("x"), U(P("y"), P("z"))));
-    test_closure(formulas);
+    formulas.push_back(U(F(P("p")), G(P("q"))));
+    test(formulas);
 
     return 0;
 }

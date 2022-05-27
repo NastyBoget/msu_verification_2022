@@ -31,7 +31,7 @@ public:
     };
 
     bool operator ==(const Formula &other) const;
-    bool operator ()(std::map<std::string, bool> &values) const;
+    BoolTernary operator ()(std::map<std::string, bool> &values) const;
     BoolTernary operator ()(std::map<std::string, Formula> &values) const;
     const Formula& operator !() const;
     const Formula& operator &&(const Formula &rhs) const;
