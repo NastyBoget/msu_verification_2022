@@ -121,4 +121,6 @@ const Formula& make_standard(const Formula& f);
 
 const Formula& move_x_inside(const Formula& f, int x_number = 0);
 
+const Formula& compute_constant_subformulas(const Formula& f);
+
 } // namespace model::ltl

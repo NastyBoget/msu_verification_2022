@@ -357,7 +357,7 @@ make_transitions(const std::map<std::string, std::map<std::string, Formula>> &st
 
 Automaton ltl_to_buchi(const Formula& f) {
     // make formula standard
-    const auto& st_f = move_x_inside(make_standard(f));
+    const auto& st_f = compute_constant_subformulas(move_x_inside(make_standard(f)));
     // make closure
     if (VERBOSE)
         std::cout << "Standard formula: " << st_f << std::endl;

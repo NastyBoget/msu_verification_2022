@@ -58,12 +58,16 @@ Formula::BoolTernary Formula::operator ()(std::map<std::string, Formula> &values
             return FALSE;
         }
         case NOT: {
+            if (values.find(this->prop()) != values.end())
+                return TRUE;
             auto value = this->lhs()(values);
             if (value == FALSE)
                 return TRUE;
             return value == UNKNOWN ? value : FALSE;
         }
         case AND: {
+            if (values.find(this->prop()) != values.end())
+                return TRUE;
             auto left_value = this->lhs()(values);
             auto right_value = this->rhs()(values);
             if (left_value == UNKNOWN or right_value == UNKNOWN)
@@ -73,6 +77,8 @@ Formula::BoolTernary Formula::operator ()(std::map<std::string, Formula> &values
             return FALSE;
         }
         case OR: {
+            if (values.find(this->prop()) != values.end())
+                return TRUE;
             bool bool_value =  (this->lhs()(values) == TRUE) or (this->rhs()(values) == TRUE);
             if (bool_value)
                 return TRUE;
@@ -211,6 +217,54 @@ const Formula& move_x_inside(const Formula& f, int x_number) {
             return move_x_inside(f.lhs(), x_number) || move_x_inside(f.rhs(), x_number);
         case Formula::U:
             return U(move_x_inside(f.lhs(), x_number), move_x_inside(f.rhs(), x_number));
+        case Formula::IMPL:
+        case Formula::G:
+        case Formula::F:
+        case Formula::R:
+            return f;
+    }
+    return f;
+}
+
+
+const Formula& compute_constant_subformulas(const Formula& f) {
+    switch (f.kind()) {
+        case Formula::ATOM: {
+            return f;
+        }
+        case Formula::NOT: {
+            auto &sub_f = compute_constant_subformulas(f.lhs());
+            if (sub_f.kind() == Formula::ATOM and (sub_f.prop() == "true" or sub_f.prop() == "false"))
+                return sub_f.prop() == "true" ? P("false") : P ("true");
+            return !sub_f;
+        }
+        case Formula::X: {
+            auto &sub_f = compute_constant_subformulas(f.lhs());
+            if (sub_f.kind() == Formula::ATOM and (sub_f.prop() == "true" or sub_f.prop() == "false"))
+                return sub_f.prop() == "true" ? P("true") : P ("false");
+            return X(sub_f);
+        }
+        case Formula::AND: {
+            auto &left = compute_constant_subformulas(f.lhs());
+            auto &right = compute_constant_subformulas(f.rhs());
+            if (left.kind() == Formula::ATOM and left.prop() == "false" or
+                right.kind() == Formula::ATOM and right.prop() == "false")
+                    return P("false");
+            return left && right;
+        }
+        case Formula::OR: {
+            auto &left = compute_constant_subformulas(f.lhs());
+            auto &right = compute_constant_subformulas(f.rhs());
+            if (left.kind() == Formula::ATOM and left.prop() == "true" or
+                right.kind() == Formula::ATOM and right.prop() == "true")
+                return P("true");
+            return left || right;
+        }
+        case Formula::U: {
+            auto &left = compute_constant_subformulas(f.lhs());
+            auto &right = compute_constant_subformulas(f.rhs());
+            return U(left, right);
+        }
         case Formula::IMPL:
         case Formula::G:
         case Formula::F:
