@@ -23,6 +23,7 @@ int main() {
     formulas.push_back(U(P("x"), U(P("y"), P("z")))); // 12
     formulas.push_back(U(F(P("p")), G(P("q")))); // 13
     formulas.push_back(U(F(P("p")), !P("p") && X(G(P("q"))))); //28
+    formulas.push_back(U(P("x"), G(U(P("y"), P("z"))))); // 21
     test(formulas);
 
     return 0;

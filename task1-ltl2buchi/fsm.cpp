@@ -158,6 +158,9 @@ get_states_for_atoms_values(const std::vector<Formula> &closure, size_t& states_
                     states_number++;
                     auto neg_until = !closure_elem;
                     local_state.second.insert({neg_until.prop(), neg_until});
+                } else {
+                    auto neg_until = !closure_elem;
+                    local_state.second.insert({neg_until.prop(), neg_until});
                 }
                 continue;
             }
